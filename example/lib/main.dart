@@ -1,12 +1,23 @@
 import 'dart:async';
+import 'dart:io';
 
-// import 'package:bluetooth_printer_ldapi/bluetooth_printer_ldapi.dart';
+// import 'package:bluetooth_printerService_ldapi/bluetooth_printerService_ldapi.dart';
+
 import 'package:bluetooth_printer_ldapi/bluetooth_printer_ldapi.dart';
 import 'package:bluetooth_printer_ldapi/model/printer_info_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   runApp(const MyApp());
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
 }
 
 class MyApp extends StatefulWidget {
@@ -16,101 +27,92 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _HomePageState extends State<HomePage> {
   List<String> printers = [];
-  final _bluetoothPrinterLdapiPlugin = BluetoothPrinterLdapi();
+  final _printerService = BluetoothPrinter();
   String status = '';
+  bool loading = false;
+  PrinterInfo? printerInfo;
+  List<PrinterInfo>? printer = [];
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('Plugin example app' ' Status: $status'),
-          actions: [
-            IconButton(
-                onPressed: () async {
-                 
-                    // 72mm x 100mm
-                    // 72mm x 50mm
-                    // 72mm x 30mm
-                   double labelWidth = 72.0;
-                  double labelHeight = 100.0;
-                  
-                  double margin = 4.0;
-                  bool result = await _bluetoothPrinterLdapiPlugin.startDraw(
-                      labelWidth, labelHeight, 0);
-                  print("result $result");
-
-                  const url =
-                      'https://hochgatterer.me/asset/finances/img/tips/QR-Code_FakeBill@2x.jpg';
-                  bool result1 = await _bluetoothPrinterLdapiPlugin.drawImage(
-                      url,
-                      margin,
-                      margin,
-                      labelWidth - margin * 2,
-                      labelHeight - margin * 2,
-                      128);
-                  print("result1 $result1");
-
-                  await _bluetoothPrinterLdapiPlugin.endDraw();
-                  await printOneLabel();
-
-                  // bool result = await _bluetoothPrinterLdapiPlugin.dra(
-                  //     labelWidth, labelHeight, 0);
-                },
-                icon: const Icon(Icons.print)),
-            IconButton(
-                onPressed: () async {
-                  await _bluetoothPrinterLdapiPlugin.closePrinter();
-                },
-                icon: const Icon(Icons.remove_circle_outline_sharp))
-          ],
-        ),
-        body: ListView.builder(
-          itemCount: printers.length,
-          itemBuilder: (context, index) => Center(
-            child: Text(printers[index]),
-          ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final bool isSuccess =
-                await _bluetoothPrinterLdapiPlugin.openPrinter(printers[0]);
-            if (isSuccess) {
-              status = "successful";
-              setState(() {});
-            } else {
-              print('Connection failed');
-              status = "failed";
-              setState(() {});
-            }
-          },
-          child: const Icon(Icons.connect_without_contact),
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+            onPressed: () async {
+              await scanPrinter();
+            },
+            icon: const Icon(Icons.search)),
+        title: Text('Plugin example app' ' Status: $status'),
+        actions: [
+          IconButton(
+              onPressed: () async {
+                await pickImage(context);
+              },
+              icon: const Icon(Icons.print)),
+          IconButton(
+              onPressed: () async {
+                await closePrinter();
+              },
+              icon: const Icon(Icons.close))
+        ],
       ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: printer?.length,
+              itemBuilder: (context, index) => ElevatedButton(
+                onPressed: () async {
+                  printerInfo = printer![index];
+                  await connectPrinter();
+                },
+                child: Center(
+                  child: Row(
+                    children: [
+                      Text(printer![index].name!),
+                      if (status == 'Connected') ...[
+                        const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                        ),
+                      ] else ...[
+                        const Icon(
+                          Icons.cancel,
+                          color: Colors.red,
+                        ),
+                      ]
+                    ],
+                  ),
+                ),
+              ),
+            ),
     );
+  }
+
+  Future<void> closePrinter() async {
+    await _printerService.close();
+  }
+
+  Future<void> connectPrinter() async {
+    if (printerInfo != null) {
+      debugPrint("printerInfo: ${printerInfo!.toMap()}");
+      bool result = await _printerService.connectToPrinter(printerInfo!);
+      status = result ? 'Connected' : 'Not Connected';
+      setState(() {
+        status = status;
+      });
+    } else {
+      print('printerInfo is null');
+    }
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    List<String> temp = [];
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      temp = await _bluetoothPrinterLdapiPlugin.scanPrinters();
-      print("temp${temp.length}");
-    } catch (e) {
-      print("Ex:$e");
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      printers = temp;
-    });
+    await _printerService.init();
+    // if (!mounted) return;
+    // setState(() {
+    //   loading = false;
+    // });
   }
 
   @override
@@ -119,17 +121,71 @@ class _MyAppState extends State<MyApp> {
     initPlatformState();
   }
 
-  Future<void> printOneLabel() async {
-    PrinterInfo data =
-        await _bluetoothPrinterLdapiPlugin.connectingPrinterDetailInfos();
-    print("data ${data.toMap()}");
-    await _bluetoothPrinterLdapiPlugin.print((bool isSuccess) {
-      if (isSuccess) {
-        print("Success!");
-      } else {
-        printOneLabel();
-        print("Failure!");
-      }
+  Future<void> pickImage(BuildContext context) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return SizedBox(
+            height: 200,
+            width: double.infinity,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                SizedBox(
+                    height: 100,
+                    width: 100,
+                    child: Image.file(File(image.path))),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Uint8List imageBytes = await image.readAsBytes();
+                      if (!mounted) return;
+                      await printImage(imageBytes);
+                      if (!mounted) return;
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Print'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } else {
+      print('No image selected.');
+    }
+  }
+
+  Future<void> printImage(Uint8List image) async {
+    if (printerInfo != null) {
+      bool result = await _printerService.printImage(image);
+      status = result ? 'Connected' : 'Not Connected';
+    } else {
+      print('printerInfo is null');
+    }
+  }
+
+  Future<void> scanPrinter() async {
+    setState(() {
+      loading = true;
     });
+    printer = await _printerService.scanPrinters();
+    setState(() {
+      loading = false;
+    });
+  }
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: HomePage(),
+    );
   }
 }

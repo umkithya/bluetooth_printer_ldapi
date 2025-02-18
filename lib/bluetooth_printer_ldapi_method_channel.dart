@@ -16,10 +16,20 @@ class MethodChannelBluetoothPrinterLdapi extends BluetoothPrinterLdapiPlatform {
   }
 
   @override
-  Future<PrinterInfo> connectingPrinterDetailInfos() async {
-    final Map<String, dynamic> result =
-        Map<String, dynamic>.from(await _channel.invokeMethod('connectingPrinterDetailInfos'));
-    return PrinterInfo.fromMap(result);
+  Future<String> closePrinterAndroid() async {
+    return await _channel.invokeMethod('close');
+  }
+
+  @override
+  Future<PrinterInfoIos> connectingPrinterDetailInfos() async {
+    final Map<String, dynamic> result = Map<String, dynamic>.from(
+        await _channel.invokeMethod('connectingPrinterDetailInfos'));
+    return PrinterInfoIos.fromMap(result);
+  }
+
+  @override
+  Future<String> connnectPrinterAndroid(PrinterInfoAndroid printer) async {
+    return await _channel.invokeMethod('connectToPrinter', printer.toMap());
   }
 
   @override
@@ -80,6 +90,12 @@ class MethodChannelBluetoothPrinterLdapi extends BluetoothPrinterLdapiPlatform {
   }
 
   @override
+  Future<void> initPrinterAndroid() async {
+    final result = await _channel.invokeMethod('init');
+    debugPrint("initPrinterAndroid: $result");
+  }
+
+  @override
   Future<bool> openPrinter(String printerName) async {
     final bool result = await _channel
         .invokeMethod('openPrinter', {'printerName': printerName});
@@ -90,6 +106,29 @@ class MethodChannelBluetoothPrinterLdapi extends BluetoothPrinterLdapiPlatform {
   Future<void> print(dynamic Function(bool) callback) async {
     final bool result = await _channel.invokeMethod('print');
     callback(result);
+  }
+
+  @override
+  Future<String> printImageAndroid(Uint8List image,
+      {bool isOrientation = false}) async {
+    final result = await _channel.invokeMethod('printPicture', {
+      'bitmap': image,
+      'isOrientation': isOrientation,
+    });
+    return result;
+  }
+
+  @override
+  Future<List<PrinterInfoAndroid>> scanPrinterForAndroid() async {
+    final List<dynamic> printers = await _channel.invokeMethod('scanPrinter');
+    if (printers.isNotEmpty) {
+      return printers
+          .map((printer) =>
+              PrinterInfoAndroid.fromMap(Map<String, dynamic>.from(printer)))
+          .toList();
+    } else {
+      return [];
+    }
   }
 
   @override
@@ -125,6 +164,18 @@ class MethodChannelBluetoothPrinterLdapi extends BluetoothPrinterLdapiPlatform {
       'width': width,
       'height': height,
       'orientation': orientation,
+    });
+    return result;
+  }
+  @override
+  Future<bool> drawImageWithImage(Uint8List image, double x, double y, double width, double height, int threshold) async {
+    final bool result = await _channel.invokeMethod('drawImageWithImage', {
+      'image': image,
+      'x': x,
+      'y': y,
+      'width': width,
+      'height': height,
+      'threshold': threshold,
     });
     return result;
   }

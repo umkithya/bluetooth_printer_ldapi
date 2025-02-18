@@ -69,7 +69,24 @@
                                 height:[height doubleValue]
                             threshold:[threshold intValue]];
         result(@(success));
-    } else if ([@"drawText" isEqualToString:call.method]) {
+    }
+    else if ([@"drawImageWithImage" isEqualToString:call.method]) {
+        FlutterStandardTypedData *imageData = call.arguments[@"image"];
+        NSNumber *x = call.arguments[@"x"];
+        NSNumber *y = call.arguments[@"y"];
+        NSNumber *width = call.arguments[@"width"];
+        NSNumber *height = call.arguments[@"height"];
+        NSNumber *threshold = call.arguments[@"threshold"];
+        UIImage *image = [UIImage imageWithData:imageData.data];
+        BOOL success = [LPAPI drawImageWithImage:image
+                                               x:[x doubleValue]
+                                               y:[y doubleValue]
+                                           width:[width doubleValue]
+                                          height:[height doubleValue]
+                                       threshold:[threshold intValue]];
+        result(@(success));
+    }
+     else if ([@"drawText" isEqualToString:call.method]) {
         NSString *text = call.arguments[@"text"];
         NSNumber *x = call.arguments[@"x"];
         NSNumber *y = call.arguments[@"y"];

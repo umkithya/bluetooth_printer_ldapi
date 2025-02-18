@@ -66,3 +66,6 @@ android {
         }
     }
 }
+dependencies {
+    implementation files('libs/LPAPI-2024-10-21-R.jar')
+}

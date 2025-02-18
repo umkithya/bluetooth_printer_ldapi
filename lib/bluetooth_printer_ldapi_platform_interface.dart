@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'bluetooth_printer_ldapi_method_channel.dart';
@@ -30,6 +31,20 @@ abstract class BluetoothPrinterLdapiPlatform extends PlatformInterface {
     throw UnimplementedError();
   }
 
+  Future<void> closePrinterAndroid() {
+    // TODO: implement startDraw
+    throw UnimplementedError();
+  }
+
+  Future<PrinterInfoIos> connectingPrinterDetailInfos() async {
+    throw UnimplementedError();
+  }
+
+  Future<String> connnectPrinterAndroid(PrinterInfoAndroid printer) {
+    // TODO: implement startDraw
+    throw UnimplementedError();
+  }
+
   Future<bool> drawBarcode(
       String text, double x, double y, double width, double height) {
     // TODO: implement drawBarcode
@@ -39,6 +54,12 @@ abstract class BluetoothPrinterLdapiPlatform extends PlatformInterface {
   Future<bool> drawImage(String fileUrl, double x, double y, double width,
       double height, int threshold) {
     // TODO: implement drawText
+    throw UnimplementedError();
+  }
+
+  Future<bool> drawImageWithImage(Uint8List image, double x, double y,
+      double width, double height, int threshold) {
+    // TODO: implement drawImageWithImage
     throw UnimplementedError();
   }
 
@@ -58,6 +79,10 @@ abstract class BluetoothPrinterLdapiPlatform extends PlatformInterface {
     throw UnimplementedError();
   }
 
+  Future<void> initPrinterAndroid() async {
+    throw UnimplementedError();
+  }
+
   Future<bool> openPrinter(String printerName) {
     // TODO: implement openPrinter
     throw UnimplementedError();
@@ -65,6 +90,16 @@ abstract class BluetoothPrinterLdapiPlatform extends PlatformInterface {
 
   Future<void> print(Function(bool) callback) {
     // TODO: implement print
+    throw UnimplementedError();
+  }
+
+  Future<String> printImageAndroid(Uint8List image,
+      {bool isOrientation = false}) {
+    // TODO: implement startDraw
+    throw UnimplementedError();
+  }
+
+  Future<List<PrinterInfoAndroid>> scanPrinterForAndroid() async {
     throw UnimplementedError();
   }
 
@@ -95,9 +130,6 @@ abstract class BluetoothPrinterLdapiPlatform extends PlatformInterface {
 
   Future<bool> startDraw(double width, double height, int orientation) {
     // TODO: implement startDraw
-    throw UnimplementedError();
-  }
-  Future<PrinterInfo> connectingPrinterDetailInfos() async {
     throw UnimplementedError();
   }
 }
